@@ -40,13 +40,17 @@ docker run -d \
   --name dockerwhiz \
   -p 8082:8082 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(pwd)/config.json:/config.json \
-  -e CONFIG_PATH=/config.json \
+  -v $(pwd)/data:/data \
+  -e CONFIG_PATH=/data/config.json \
   --restart always \
   longgoll/dockerwhiz:latest
 ```
 
-*Lưu ý: Hãy chắc chắn file `config.json` có quyền đọc/ghi để DockerWhiz lưu cấu hình mật khẩu và Telegram.*
+```bash
+docker run -d --name dockerwhiz -p 8082:8082 -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/data:/data -e CONFIG_PATH=/data/config.json --restart always longgoll/dockerwhiz:latest
+```
+
+*Lưu ý: Chúng ta nên mount cả thư mục (ví dụ `$(pwd)/data:/data`) thay vì mount trực tiếp tệp cấu hình đơn lẻ để tránh trường hợp Docker tự động tạo sai thư mục khi tệp chưa tồn tại. Ứng dụng sẽ tự động khởi tạo tệp `config.json` bên trong thư mục data.*
 
 ### Cách 2: Triển khai bằng Docker Compose
 
@@ -63,9 +67,9 @@ services:
       - "8082:8082"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./config.json:/config.json
+      - ./data:/data
     environment:
-      - CONFIG_PATH=/config.json
+      - CONFIG_PATH=/data/config.json
     restart: always
 ```
 
