@@ -2277,7 +2277,7 @@ func settingsToggleTelegramHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	config.DockerSocket = getEnv("DOCKER_SOCKET", "/var/run/docker.sock")
-	config.Host = getEnv("HOST", "127.0.0.1")
+	config.Host = getEnv("HOST", "0.0.0.0")
 	config.Port = getEnv("PORT", "8082")
 	config.TelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	config.TelegramChatID = os.Getenv("TELEGRAM_CHAT_ID")
