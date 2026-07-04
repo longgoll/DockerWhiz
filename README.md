@@ -33,8 +33,15 @@
 
 ### Cách 1: Triển khai bằng Docker (Khuyên dùng)
 
-Bạn có thể chạy DockerWhiz trực tiếp bằng dòng lệnh sau:
+Tải Docker image mới nhất từ Docker Hub:
 
+```bash
+docker pull longgoll/dockerwhiz:latest
+```
+
+Khởi chạy container trực tiếp bằng dòng lệnh (chọn dạng xuống dòng hoặc dạng một dòng để dán trực tiếp):
+
+- **Dạng nhiều dòng (Dễ đọc)**:
 ```bash
 docker run -d \
   --name dockerwhiz \
@@ -46,6 +53,7 @@ docker run -d \
   longgoll/dockerwhiz:latest
 ```
 
+- **Dạng một dòng (Dễ copy-paste vào VPS)**:
 ```bash
 docker run -d --name dockerwhiz -p 8082:8082 -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/data:/data -e CONFIG_PATH=/data/config.json --restart always longgoll/dockerwhiz:latest
 ```
