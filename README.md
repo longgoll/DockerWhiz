@@ -126,6 +126,7 @@ DockerWhiz/
 ├── go.mod              # Khai báo Go module
 ├── Dockerfile          # Cấu hình biên dịch tối ưu (Multi-stage & Scratch build)
 ├── .gitignore          # Cấu hình bỏ qua các tệp tin biên dịch và cấu hình cục bộ
+├── LICENSE             # Tệp tin giấy phép MIT của dự án
 └── README.md           # Tài liệu hướng dẫn sử dụng
 ```
 
