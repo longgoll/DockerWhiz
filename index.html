@@ -55,7 +55,7 @@
     </style>
 </head>
 
-<body class="text-slate-100 min-h-screen antialiased flex flex-col justify-between" x-data="app()">
+<body class="text-slate-100 min-h-screen antialiased flex flex-col justify-between pb-20 sm:pb-0" x-data="app()">
 
     <!-- Header Section (Only visible on dashboard) -->
     <header class="border-b border-slate-900 bg-[#090e1a]/80 backdrop-blur-md sticky top-0 z-50">
@@ -74,7 +74,7 @@
                         class="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                         DockerWhiz
                     </h1>
-                    <p class="text-[10px] text-slate-500 tracking-wider uppercase font-semibold">Docker Realtime
+                    <p class="hidden xs:block text-[10px] text-slate-500 tracking-wider uppercase font-semibold">Docker Realtime
                         Watchdog</p>
                 </div>
             </div>
@@ -103,11 +103,11 @@
             </div>
 
             <!-- SSE Connection Status & Logout (Only if logged in) -->
-            <div class="flex items-center space-x-4" x-show="page === 'dashboard'">
+            <div class="flex items-center space-x-2 sm:space-x-4" x-show="page === 'dashboard'">
                 <!-- Telegram Quick Toggle -->
                 <button @click="toggleTelegram()"
                     :class="settings.telegramDisabled ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-rose-500/5' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 shadow-emerald-500/5'"
-                    class="text-xs border px-3.5 py-1.5 rounded-xl transition-all duration-300 font-semibold flex items-center space-x-2 shadow-sm focus:outline-none relative overflow-hidden active:scale-95 cursor-pointer"
+                    class="text-xs border px-2.5 py-1.5 sm:px-3.5 rounded-xl transition-all duration-300 font-semibold flex items-center space-x-1.5 sm:space-x-2 shadow-sm focus:outline-none relative overflow-hidden active:scale-95 cursor-pointer"
                     title="Bật/Tắt nhanh thông báo Telegram">
                     <span class="relative flex h-2 w-2">
                         <span :class="settings.telegramDisabled ? 'bg-rose-400' : 'bg-emerald-400'"
@@ -119,11 +119,11 @@
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
-                    <span class="tracking-wide"
+                    <span class="hidden md:inline tracking-wide"
                         x-text="settings.telegramDisabled ? 'Telegram: Tắt' : 'Telegram: Bật'">Telegram</span>
                 </button>
 
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <span class="relative flex h-2 w-2">
                         <span :class="connected ? 'bg-emerald-400' : 'bg-rose-500'"
                             class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"></span>
@@ -131,18 +131,48 @@
                             class="relative inline-flex rounded-full h-2 w-2"></span>
                     </span>
                     <span :class="connected ? 'text-emerald-400' : 'text-rose-400'"
-                        class="text-xs font-medium tracking-wide uppercase transition-colors duration-300"
+                        class="hidden sm:inline text-[11px] sm:text-xs font-semibold tracking-wide uppercase transition-colors duration-300"
                         x-text="connected ? 'Live' : 'Mất Kết Nối'">
                         Đang kết nối...
                     </span>
                 </div>
+                
+                <!-- Logout Button -->
                 <button @click="logout()"
-                    class="text-xs bg-slate-900 border border-slate-800 hover:border-rose-500/30 hover:text-rose-400 text-slate-400 px-3 py-1.5 rounded-lg transition-colors font-medium">
-                    Đăng xuất
+                    class="text-xs bg-slate-900 border border-slate-800 hover:border-rose-500/30 hover:text-rose-400 text-slate-400 px-2.5 py-1.5 sm:px-3 rounded-lg transition-colors font-medium flex items-center space-x-1"
+                    title="Đăng xuất">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span class="hidden sm:inline">Đăng xuất</span>
                 </button>
             </div>
         </div>
     </header>
+
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#090e1a]/95 backdrop-blur-lg border-t border-slate-900/80 px-6 py-2 flex items-center justify-around" 
+         x-show="page === 'dashboard'" style="display: none;">
+        <button @click="activeTab = 'dashboard'"
+            :class="activeTab === 'dashboard' ? 'text-indigo-400 font-semibold' : 'text-slate-500'"
+            class="flex flex-col items-center space-y-0.5 py-1 transition-all">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span class="text-[10px] tracking-wide">Dashboard</span>
+        </button>
+        <button @click="activeTab = 'settings'; loadSettings();"
+            :class="activeTab === 'settings' ? 'text-indigo-400 font-semibold' : 'text-slate-500'"
+            class="flex flex-col items-center space-y-0.5 py-1 transition-all">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="text-[10px] tracking-wide">Cấu hình</span>
+        </button>
+    </nav>
 
     <!-- Page Content Wrapper -->
     <div class="flex-grow flex flex-col justify-center">
@@ -175,21 +205,21 @@
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Setup
                                 Token (từ log console VPS)</label>
                             <input type="text" x-model="setupTokenInput" required
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
                                 placeholder="Nhập token hiển thị trong log...">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật khẩu
                                 mới</label>
                             <input type="password" x-model="setupPass" required
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="••••••••">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Xác nhận
                                 mật khẩu</label>
                             <input type="password" x-model="setupConfirm" required
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="••••••••">
                         </div>
 
@@ -223,7 +253,7 @@
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật
                                 khẩu</label>
                             <input type="password" x-model="loginPass" required
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="••••••••">
                         </div>
 
@@ -441,7 +471,7 @@
                                     </div>
 
                                     <!-- Action Buttons -->
-                                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
                                         <!-- Logs Button -->
                                         <button @click="viewLogs(c.id, c.name)"
                                             class="text-xs bg-slate-900/85 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1"
@@ -616,7 +646,7 @@
                                     class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
                                     Bot Token</label>
                                 <input type="password" x-model="settings.telegramBotToken"
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                     placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ">
                                 <p class="text-[10px] text-slate-500 mt-1.5">Mã Token được cấp bởi @BotFather khi tạo
                                     Bot.</p>
@@ -626,7 +656,7 @@
                                     class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
                                     Chat ID</label>
                                 <input type="text" x-model="settings.telegramChatID"
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                     placeholder="-100123456789">
                                 <p class="text-[10px] text-slate-500 mt-1.5">ID của nhóm chat hoặc ID tài khoản cá nhân
                                     của bạn.</p>
@@ -636,7 +666,7 @@
                                     class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
                                     Admin User ID (Bảo mật Chatbot)</label>
                                 <input type="text" x-model="settings.telegramAdminID"
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
                                     placeholder="123456789">
                                 <p class="text-[10px] text-slate-500 mt-1.5">ID tài khoản Telegram của bạn (Admin). Chỉ
                                     ID này mới có quyền gửi lệnh điều khiển VPS cho Bot.</p>
@@ -732,7 +762,7 @@
                                     kỳ dọn dẹp</label>
                                 <select x-model.number="settings.prune.interval_hours"
                                     :disabled="!settings.prune.enabled"
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option :value="6">Mỗi 6 giờ</option>
                                     <option :value="12">Mỗi 12 giờ</option>
                                     <option :value="24">Hằng ngày (24 giờ)</option>
@@ -808,7 +838,7 @@
                                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Giữ
                                     lại items mới hơn</label>
                                 <select x-model.number="settings.prune.keep_recent_hours"
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
                                     <option :value="1">1 giờ</option>
                                     <option :value="6">6 giờ</option>
                                     <option :value="12">12 giờ</option>
@@ -1106,7 +1136,7 @@
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật khẩu
                                 hiện tại</label>
                             <input type="password" x-model="password.old" required
-                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
                                 placeholder="••••••••">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1114,14 +1144,14 @@
                                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật
                                     khẩu mới</label>
                                 <input type="password" x-model="password.new" required
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
                                     placeholder="••••••••">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Xác
                                     nhận mật khẩu mới</label>
                                 <input type="password" x-model="password.confirm" required
-                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
                                     placeholder="••••••••">
                             </div>
                         </div>
@@ -1164,14 +1194,14 @@
 
     <!-- Logs Modal -->
     <div x-show="showLogsModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020408]/80 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#020408]/80 backdrop-blur-sm"
         style="display: none;" @keydown.escape.window="showLogsModal = false">
 
-        <div class="glass-card rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-800 shadow-2xl overflow-hidden"
+        <div class="glass-card rounded-2xl w-full max-w-4xl max-h-[90vh] md:max-h-[85vh] flex flex-col border border-slate-800 shadow-2xl overflow-hidden"
             @click.away="showLogsModal = false">
 
             <!-- Modal Header -->
-            <div class="px-6 py-4 border-b border-slate-900 bg-[#090e1a]/95 flex items-center justify-between">
+            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-900 bg-[#090e1a]/95 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                     <div class="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1180,13 +1210,13 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-200 tracking-wide uppercase">Nhật Ký Container Logs</h3>
-                        <p class="text-[10px] text-indigo-400 font-mono mt-0.5" x-text="selectedContainerName"></p>
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-200 tracking-wide uppercase">Nhật Ký Container Logs</h3>
+                        <p class="text-[9px] sm:text-[10px] text-indigo-400 font-mono mt-0.5" x-text="selectedContainerName"></p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <button @click="refreshLogs()"
-                        class="text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors font-medium flex items-center space-x-1">
+                        class="text-[11px] sm:text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg transition-colors font-medium flex items-center space-x-1">
                         <svg :class="modalLoading ? 'animate-spin' : ''" class="w-3.5 h-3.5 text-slate-400" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -1195,7 +1225,7 @@
                         <span>Làm mới</span>
                     </button>
                     <button @click="showLogsModal = false"
-                        class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg transition-colors">
+                        class="text-slate-400 hover:text-slate-200 p-1 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -1204,7 +1234,7 @@
             </div>
 
             <!-- Modal Content (Logs body) -->
-            <div class="flex-grow p-6 bg-[#040711] overflow-y-auto flex flex-col min-h-[300px] max-h-[60vh]">
+            <div class="flex-grow p-4 sm:p-6 bg-[#040711] overflow-y-auto flex flex-col min-h-[300px] max-h-[70vh] sm:max-h-[60vh]">
                 <div x-show="modalLoading" class="flex-grow flex flex-col items-center justify-center py-12">
                     <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
                     <p class="mt-3 text-[11px] font-medium text-slate-500 uppercase tracking-widest">Đang tải nhật ký...
@@ -1223,14 +1253,14 @@
                         </div>
                     </template>
                     <template x-if="selectedContainerLogs">
-                        <pre class="bg-slate-950/75 border border-slate-900 rounded-xl p-4 font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre-wrap flex-grow max-h-full select-text"
+                        <pre class="bg-slate-950/75 border border-slate-900 rounded-xl p-3 sm:p-4 font-mono text-[11px] sm:text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre-wrap flex-grow max-h-full select-text"
                             x-text="selectedContainerLogs"></pre>
                     </template>
                 </div>
             </div>
 
             <!-- Modal Footer -->
-            <div class="px-6 py-3 border-t border-slate-900 bg-[#090e1a]/95 flex justify-end">
+            <div class="px-4 py-3 sm:px-6 sm:py-3 border-t border-slate-900 bg-[#090e1a]/95 flex justify-end">
                 <button @click="showLogsModal = false"
                     class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl shadow-md transition-colors font-semibold">
                     Đóng
