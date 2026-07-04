@@ -478,6 +478,12 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 // Load and Save config
 func loadConfig() {
 	configPath = getEnv("CONFIG_PATH", "./config.json")
+
+	// Check if path is a directory (common Docker mounting mistake)
+	if info, err := os.Stat(configPath); err == nil && info.IsDir() {
+		log.Fatalf("Failed to load configuration: CONFIG_PATH (%s) is a directory. If you are using Docker, please check your volume mount (-v). You should mount a file, or preferably mount a data folder instead.", configPath)
+	}
+
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
