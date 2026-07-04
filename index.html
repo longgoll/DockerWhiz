@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DockerWhiz - Docker Control Center</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plus Jakarta Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #060a13;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .glow-indigo {
+            transition: all 0.3s ease;
+        }
+
+        .glow-indigo:hover {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.08);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .glow-emerald {
+            transition: all 0.3s ease;
+        }
+
+        .glow-emerald:hover {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .glow-rose {
+            transition: all 0.3s ease;
+        }
+
+        .glow-rose:hover {
+            box-shadow: 0 0 25px rgba(244, 63, 94, 0.08);
+            border-color: rgba(244, 63, 94, 0.2);
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 min-h-screen antialiased flex flex-col justify-between" x-data="app()">
+
+    <!-- Header Section (Only visible on dashboard) -->
+    <header class="border-b border-slate-900 bg-[#090e1a]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="p-2 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1
+                        class="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        DockerWhiz
+                    </h1>
+                    <p class="text-[10px] text-slate-500 tracking-wider uppercase font-semibold">Docker Realtime
+                        Watchdog</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs (Only if logged in) -->
+            <div class="hidden sm:flex items-center space-x-1" x-show="page === 'dashboard'">
+                <button @click="activeTab = 'dashboard'"
+                    :class="activeTab === 'dashboard' ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 border-transparent'"
+                    class="text-xs px-3.5 py-2 rounded-xl transition-all border font-semibold flex items-center space-x-1.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button @click="activeTab = 'settings'; loadSettings();"
+                    :class="activeTab === 'settings' ? 'bg-indigo-600/15 text-indigo-400 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 border-transparent'"
+                    class="text-xs px-3.5 py-2 rounded-xl transition-all border font-semibold flex items-center space-x-1.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Cấu hình Telegram</span>
+                </button>
+            </div>
+
+            <!-- SSE Connection Status & Logout (Only if logged in) -->
+            <div class="flex items-center space-x-4" x-show="page === 'dashboard'">
+                <!-- Telegram Quick Toggle -->
+                <button @click="toggleTelegram()"
+                    :class="settings.telegramDisabled ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-rose-500/5' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 shadow-emerald-500/5'"
+                    class="text-xs border px-3.5 py-1.5 rounded-xl transition-all duration-300 font-semibold flex items-center space-x-2 shadow-sm focus:outline-none relative overflow-hidden active:scale-95 cursor-pointer"
+                    title="Bật/Tắt nhanh thông báo Telegram">
+                    <span class="relative flex h-2 w-2">
+                        <span :class="settings.telegramDisabled ? 'bg-rose-400' : 'bg-emerald-400'"
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                        <span :class="settings.telegramDisabled ? 'bg-rose-500' : 'bg-emerald-500'"
+                            class="relative inline-flex rounded-full h-2 w-2"></span>
+                    </span>
+                    <!-- Telegram Icon (Paper Plane) -->
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    <span class="tracking-wide"
+                        x-text="settings.telegramDisabled ? 'Telegram: Tắt' : 'Telegram: Bật'">Telegram</span>
+                </button>
+
+                <div class="flex items-center space-x-2">
+                    <span class="relative flex h-2 w-2">
+                        <span :class="connected ? 'bg-emerald-400' : 'bg-rose-500'"
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                        <span :class="connected ? 'bg-emerald-500' : 'bg-rose-600'"
+                            class="relative inline-flex rounded-full h-2 w-2"></span>
+                    </span>
+                    <span :class="connected ? 'text-emerald-400' : 'text-rose-400'"
+                        class="text-xs font-medium tracking-wide uppercase transition-colors duration-300"
+                        x-text="connected ? 'Live' : 'Mất Kết Nối'">
+                        Đang kết nối...
+                    </span>
+                </div>
+                <button @click="logout()"
+                    class="text-xs bg-slate-900 border border-slate-800 hover:border-rose-500/30 hover:text-rose-400 text-slate-400 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Content Wrapper -->
+    <div class="flex-grow flex flex-col justify-center">
+
+        <!-- LOADING STATE -->
+        <div x-show="page === 'loading'" class="flex flex-col items-center justify-center py-20">
+            <div class="relative flex items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                <div class="absolute h-8 w-8 rounded-full border-t border-purple-500 animate-ping"></div>
+            </div>
+            <p class="mt-4 text-xs font-medium text-slate-500 uppercase tracking-widest animate-pulse">Đang kết nối hệ
+                thống...</p>
+        </div>
+
+        <!-- SETUP STATE -->
+        <div x-show="page === 'setup'" class="max-w-md w-full mx-auto px-4 py-12" style="display: none;">
+            <div class="glass-card rounded-3xl p-8 border border-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.05)]">
+                <div class="text-center mb-6">
+                    <span
+                        class="text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Khởi
+                        tạo</span>
+                    <h2 class="text-xl font-extrabold text-slate-200 mt-3">Thiết Lập Mật Khẩu</h2>
+                    <p class="text-xs text-slate-500 mt-1">Tạo mật khẩu quản trị cho lần đầu tiên sử dụng DockerWhiz.
+                    </p>
+                </div>
+
+                <form @submit.prevent="setupPassword()">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Setup
+                                Token (từ log console VPS)</label>
+                            <input type="text" x-model="setupTokenInput" required
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
+                                placeholder="Nhập token hiển thị trong log...">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật khẩu
+                                mới</label>
+                            <input type="password" x-model="setupPass" required
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Xác nhận
+                                mật khẩu</label>
+                            <input type="password" x-model="setupConfirm" required
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                placeholder="••••••••">
+                        </div>
+
+                        <div x-show="errorMessage"
+                            class="text-xs text-rose-400 bg-rose-500/5 border border-rose-500/10 p-3 rounded-xl"
+                            x-text="errorMessage" style="display: none;"></div>
+
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-sm tracking-wide">
+                            Hoàn tất thiết lập
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- LOGIN STATE -->
+        <div x-show="page === 'login'" class="max-w-md w-full mx-auto px-4 py-12" style="display: none;">
+            <div class="glass-card rounded-3xl p-8 border border-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.05)]">
+                <div class="text-center mb-6">
+                    <span
+                        class="text-xs bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Bảo
+                        mật</span>
+                    <h2 class="text-xl font-extrabold text-slate-200 mt-3">Đăng Nhập Quản Trị</h2>
+                    <p class="text-xs text-slate-500 mt-1">Vui lòng cung cấp mật khẩu để tiếp tục.</p>
+                </div>
+
+                <form @submit.prevent="login()">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật
+                                khẩu</label>
+                            <input type="password" x-model="loginPass" required
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                placeholder="••••••••">
+                        </div>
+
+                        <div x-show="errorMessage"
+                            class="text-xs text-rose-400 bg-rose-500/5 border border-rose-500/10 p-3 rounded-xl"
+                            x-text="errorMessage" style="display: none;"></div>
+
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-sm tracking-wide">
+                            Đăng nhập
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DASHBOARD STATE -->
+        <div x-show="page === 'dashboard' && activeTab === 'dashboard'"
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full" style="display: none;">
+
+            <!-- Host Server Resource Monitor Bar -->
+            <section class="glass-card rounded-2xl p-5 mb-8 border-l-4 border-l-indigo-500 shadow-md">
+                <div class="flex items-center space-x-2 mb-4">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                    <h2 class="text-xs font-bold tracking-wider text-slate-400 uppercase">Tài nguyên Máy chủ VPS (Host)
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Host CPU -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-400">Host CPU Usage</span>
+                            <span class="font-semibold font-mono text-indigo-400"
+                                x-text="stats.host ? stats.host.cpuUsage.toFixed(1) + '%' : '0%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                                :style="`width: ${stats.host ? stats.host.cpuUsage : 0}%`"></div>
+                        </div>
+                    </div>
+
+                    <!-- Host RAM -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-400">Host Memory (RAM)</span>
+                            <span class="font-semibold font-mono"
+                                :class="stats.host && stats.host.ramPercent > 90 ? 'text-rose-400' : 'text-emerald-400'"
+                                x-text="stats.host ? `${stats.host.ramPercent.toFixed(1)}% (${stats.host.ramUsed.toFixed(2)}GB / ${stats.host.ramTotal.toFixed(1)}GB)` : '0%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="h-full rounded-full transition-all duration-500"
+                                :class="stats.host && stats.host.ramPercent > 90 ? 'bg-rose-500' : 'bg-emerald-500'"
+                                :style="`width: ${stats.host ? stats.host.ramPercent : 0}%`"></div>
+                        </div>
+                    </div>
+
+                    <!-- Host Disk -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-400">Host Disk Space</span>
+                            <span class="font-semibold font-mono"
+                                :class="stats.host && stats.host.diskPercent > 85 ? 'text-rose-400' : 'text-amber-400'"
+                                x-text="stats.host ? `${stats.host.diskPercent.toFixed(1)}% (${stats.host.diskUsed.toFixed(1)}GB / ${stats.host.diskTotal.toFixed(0)}GB)` : '0%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="h-full rounded-full transition-all duration-500"
+                                :class="stats.host && stats.host.diskPercent > 85 ? 'bg-rose-500' : 'bg-amber-500'"
+                                :style="`width: ${stats.host ? stats.host.diskPercent : 0}%`"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Container Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <!-- Total Containers Card -->
+                <div class="glass-card glow-indigo rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Container</p>
+                        <h3 class="text-3xl font-bold mt-1 text-slate-200" x-text="stats.totalContainers">0</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Running Containers Card -->
+                <div class="glass-card glow-emerald rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đang Chạy</p>
+                        <h3 class="text-3xl font-bold mt-1 text-emerald-400" x-text="stats.runningCount">0</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Stopped Containers Card -->
+                <div class="glass-card glow-rose rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã Dừng / Sập</p>
+                        <h3 class="text-3xl font-bold mt-1 text-rose-400" x-text="stats.stoppedCount">0</h3>
+                    </div>
+                    <div class="p-3 bg-rose-500/10 rounded-xl text-rose-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Lists -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Containers -->
+                <section class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase">Danh sách Docker
+                            Containers</h2>
+                        <span class="text-xs text-slate-500">Cập nhật tự động (Realtime)</span>
+                    </div>
+
+                    <template x-if="!stats.containers || stats.containers.length === 0">
+                        <div class="glass-card rounded-2xl p-12 text-center">
+                            <svg class="w-12 h-12 text-slate-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18" />
+                            </svg>
+                            <h4 class="text-slate-400 font-semibold text-sm">Không tìm thấy Container nào</h4>
+                            <p class="text-slate-600 text-xs mt-1">Vui lòng kiểm tra kết nối với Docker socket.</p>
+                        </div>
+                    </template>
+
+                    <div class="space-y-3">
+                        <template x-for="c in stats.containers" :key="c.id">
+                            <div class="glass-card rounded-xl p-5 hover:bg-slate-900/40 transition-all duration-200 border-l-4"
+                                :class="{
+                                    'border-l-emerald-500': c.state === 'running',
+                                    'border-l-slate-700': c.state !== 'running'
+                                 }">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div class="flex items-start space-x-3.5">
+                                        <div class="mt-1">
+                                            <span class="relative flex h-2.5 w-2.5">
+                                                <span x-show="c.state === 'running'"
+                                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                <span :class="{
+                                                    'bg-emerald-500': c.state === 'running',
+                                                    'bg-slate-600': c.state !== 'running'
+                                                }" class="relative inline-flex rounded-full h-2.5 w-2.5"></span>
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center space-x-2">
+                                                <h4 class="text-base font-bold text-slate-200 tracking-tight"
+                                                    x-text="c.name"></h4>
+                                                <span
+                                                    class="text-[10px] bg-slate-800/80 px-2 py-0.5 rounded font-mono text-slate-400"
+                                                    x-text="c.id"></span>
+                                            </div>
+                                            <p class="text-xs text-slate-500 font-mono mt-0.5" x-text="c.image"></p>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="flex flex-row sm:flex-col sm:items-end justify-between items-center sm:text-right gap-2">
+                                        <span :class="{
+                                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': c.state === 'running',
+                                            'bg-slate-800 text-slate-400 border-slate-700': c.state !== 'running'
+                                        }" class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border"
+                                            x-text="c.state">
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-medium" x-text="c.status"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Control Actions & Logs -->
+                                <div
+                                    class="mt-4 pt-4 border-t border-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <!-- Memory usage bar if running -->
+                                    <div x-show="c.state === 'running'"
+                                        class="flex-grow flex items-center gap-3 mr-0 sm:mr-4 min-w-[200px] w-full sm:w-auto">
+                                        <span class="text-xs text-slate-500 font-medium whitespace-nowrap">RAM:</span>
+                                        <div
+                                            class="w-full bg-slate-900/80 rounded-full h-1.5 overflow-hidden border border-slate-800/40">
+                                            <div class="h-full rounded-full transition-all duration-500" :class="{
+                                                     'bg-emerald-500': c.ramPercent < 60,
+                                                     'bg-amber-500': c.ramPercent >= 60 && c.ramPercent < 85,
+                                                     'bg-rose-500': c.ramPercent >= 85
+                                                 }" :style="`width: ${c.ramPercent}%`"></div>
+                                        </div>
+                                        <div class="text-[11px] font-semibold font-mono whitespace-nowrap text-right min-w-[110px]"
+                                            :class="{
+                                                 'text-emerald-400': c.ramPercent < 60,
+                                                 'text-amber-400': c.ramPercent >= 60 && c.ramPercent < 85,
+                                                 'text-rose-400': c.ramPercent >= 85
+                                             }">
+                                            <span x-text="formatBytes(c.ramUsed)"></span> / <span
+                                                x-text="c.ramPercent.toFixed(1) + '%'"></span>
+                                        </div>
+                                    </div>
+                                    <div x-show="c.state !== 'running'" class="flex-grow text-xs text-slate-500 italic">
+                                        Không hoạt động
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                        <!-- Logs Button -->
+                                        <button @click="viewLogs(c.id, c.name)"
+                                            class="text-xs bg-slate-900/85 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1"
+                                            :disabled="!!actionLoading[c.id]">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span>Logs</span>
+                                        </button>
+
+                                        <!-- Start Button (Only if stopped) -->
+                                        <button x-show="c.state !== 'running'"
+                                            @click="performAction(c.id, c.name, 'start')"
+                                            class="text-xs bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 font-semibold"
+                                            :disabled="!!actionLoading[c.id]">
+                                            <svg x-show="!actionLoading[c.id] || actionLoading[c.id] !== 'start'"
+                                                class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <svg x-show="actionLoading[c.id] === 'start'"
+                                                class="animate-spin h-3.5 w-3.5 text-emerald-400" fill="none"
+                                                viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                </path>
+                                            </svg>
+                                            <span>Bắt đầu</span>
+                                        </button>
+
+                                        <!-- Stop Button (Only if running) -->
+                                        <button x-show="c.state === 'running'"
+                                            @click="performAction(c.id, c.name, 'stop')"
+                                            class="text-xs bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 font-semibold"
+                                            :disabled="!!actionLoading[c.id]">
+                                            <svg x-show="!actionLoading[c.id] || actionLoading[c.id] !== 'stop'"
+                                                class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 10h6v4H9z" />
+                                            </svg>
+                                            <svg x-show="actionLoading[c.id] === 'stop'"
+                                                class="animate-spin h-3.5 w-3.5 text-rose-400" fill="none"
+                                                viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                </path>
+                                            </svg>
+                                            <span>Dừng</span>
+                                        </button>
+
+                                        <!-- Restart Button (Only if running) -->
+                                        <button x-show="c.state === 'running'"
+                                            @click="performAction(c.id, c.name, 'restart')"
+                                            class="text-xs bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/40 px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 font-semibold"
+                                            :disabled="!!actionLoading[c.id]">
+                                            <svg x-show="!actionLoading[c.id] || actionLoading[c.id] !== 'restart'"
+                                                class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H18v3z" />
+                                            </svg>
+                                            <svg x-show="actionLoading[c.id] === 'restart'"
+                                                class="animate-spin h-3.5 w-3.5 text-indigo-400" fill="none"
+                                                viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                </path>
+                                            </svg>
+                                            <span>Khởi động lại</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+
+                <!-- Incident Logs Feed -->
+                <section class="lg:col-span-4 space-y-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase">Nhật Ký Sự Kiện (Session)
+                        </h2>
+                        <button @click="logs = []"
+                            class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">Xóa</button>
+                    </div>
+
+                    <div
+                        class="glass-card rounded-2xl p-4 max-h-[520px] overflow-y-auto space-y-3 min-h-[250px] relative">
+                        <template x-if="logs.length === 0">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-600 p-4">
+                                <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span class="text-xs text-center">Chưa có thay đổi nào trong phiên hiện tại.</span>
+                            </div>
+                        </template>
+
+                        <template x-for="log in logs" :key="log.id">
+                            <div class="text-[11px] p-3 rounded-lg border flex items-start gap-2.5 transition-all duration-300 animate-fadeIn"
+                                :class="{
+                                     'bg-emerald-500/5 border-emerald-500/10 text-emerald-300/90': log.type === 'success',
+                                     'bg-rose-500/5 border-rose-500/10 text-rose-300/90': log.type === 'error' || log.type === 'warning',
+                                     'bg-indigo-500/5 border-indigo-500/10 text-indigo-300/90': log.type === 'info'
+                                 }">
+                                <span class="font-mono text-slate-500 select-none mt-0.5" x-text="log.time"></span>
+                                <div class="flex-grow leading-relaxed">
+                                    <span x-html="log.message"></span>
+                                    <template x-if="log.containerId">
+                                        <button @click="viewLogs(log.containerId, log.containerName)"
+                                            class="ml-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 hover:underline font-medium inline-flex items-center space-x-0.5">
+                                            <span>(Logs)</span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- SETTINGS STATE -->
+        <div x-show="page === 'dashboard' && activeTab === 'settings'"
+            class="max-w-3xl w-full mx-auto px-4 py-8 space-y-8" style="display: none;">
+
+            <div x-show="settingsLoading"
+                class="glass-card rounded-3xl p-12 border border-indigo-500/10 flex flex-col items-center justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                <p class="mt-3 text-[11px] font-medium text-slate-500 uppercase tracking-widest">Đang tải cấu hình...
+                </p>
+            </div>
+
+            <div x-show="!settingsLoading" class="space-y-8">
+                <!-- Telegram Alert Config Card -->
+                <div
+                    class="glass-card rounded-3xl p-8 border border-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.02)]">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-200">Cấu Hình Telegram Alerting</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Nhận cảnh báo tự động về điện thoại khi container
+                                sập hoặc VPS quá tải.</p>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="saveSettings()" class="space-y-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
+                                    Bot Token</label>
+                                <input type="password" x-model="settings.telegramBotToken"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                                <p class="text-[10px] text-slate-500 mt-1.5">Mã Token được cấp bởi @BotFather khi tạo
+                                    Bot.</p>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
+                                    Chat ID</label>
+                                <input type="text" x-model="settings.telegramChatID"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    placeholder="-100123456789">
+                                <p class="text-[10px] text-slate-500 mt-1.5">ID của nhóm chat hoặc ID tài khoản cá nhân
+                                    của bạn.</p>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Telegram
+                                    Admin User ID (Bảo mật Chatbot)</label>
+                                <input type="text" x-model="settings.telegramAdminID"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    placeholder="123456789">
+                                <p class="text-[10px] text-slate-500 mt-1.5">ID tài khoản Telegram của bạn (Admin). Chỉ
+                                    ID này mới có quyền gửi lệnh điều khiển VPS cho Bot.</p>
+                            </div>
+                            <div class="flex items-center space-x-2 pt-2">
+                                <input type="checkbox" id="telegramDisabled" x-model="settings.telegramDisabled"
+                                    class="h-4 w-4 bg-slate-950/80 border border-slate-800 text-indigo-600 focus:ring-indigo-500 rounded transition-all cursor-pointer">
+                                <label for="telegramDisabled"
+                                    class="text-xs font-bold text-slate-400 select-none cursor-pointer">Vô hiệu hóa
+                                    (Tắt) tất cả thông báo Telegram</label>
+                            </div>
+                        </div>
+
+                        <!-- Test Connection Feedback Message -->
+                        <div x-show="testFeedback" class="text-xs p-3.5 rounded-xl border transition-all" :class="{
+                                 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400': testSuccess,
+                                 'bg-rose-500/5 border-rose-500/10 text-rose-400': !testSuccess
+                             }" x-text="testFeedback" style="display: none;"></div>
+
+                        <div class="flex items-center space-x-3 pt-2">
+                            <!-- Save Button -->
+                            <button type="submit"
+                                class="flex-grow bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-sm tracking-wide flex items-center justify-center space-x-2">
+                                <svg x-show="!saveLoading" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                <svg x-show="saveLoading" class="animate-spin h-4 w-4 text-white" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Lưu cấu hình Telegram</span>
+                            </button>
+
+                            <!-- Test Button -->
+                            <button type="button" @click="testTelegram()" :disabled="testLoading || saveLoading"
+                                class="bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold py-3 px-6 rounded-xl transition-all text-sm flex items-center justify-center space-x-2">
+                                <svg x-show="!testLoading" class="w-4 h-4 text-slate-400" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                                <svg x-show="testLoading" class="animate-spin h-4 w-4 text-indigo-400" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Thử kết nối</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Docker Smart Prune Card -->
+                <div
+                    class="glass-card rounded-3xl p-8 border border-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.02)]">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-200">Dọn Rác Docker Thông Minh (Smart Prune)
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Tùy chọn dọn dẹp theo loại, xem trước trước khi
+                                xóa, bảo vệ dữ liệu quan trọng.</p>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="savePruneSettings()" class="space-y-6">
+                        <!-- Auto Prune Toggle + Interval -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                            <div class="flex items-center space-x-2 pb-4">
+                                <input type="checkbox" id="pruneEnabled" x-model="settings.prune.enabled"
+                                    class="h-4 w-4 bg-slate-950/80 border border-slate-800 text-indigo-600 focus:ring-indigo-500 rounded transition-all cursor-pointer">
+                                <label for="pruneEnabled"
+                                    class="text-xs font-bold text-slate-400 select-none cursor-pointer">Tự động dọn dẹp
+                                    định kỳ</label>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chu
+                                    kỳ dọn dẹp</label>
+                                <select x-model.number="settings.prune.interval_hours"
+                                    :disabled="!settings.prune.enabled"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <option :value="6">Mỗi 6 giờ</option>
+                                    <option :value="12">Mỗi 12 giờ</option>
+                                    <option :value="24">Hằng ngày (24 giờ)</option>
+                                    <option :value="48">Mỗi 2 ngày (48 giờ)</option>
+                                    <option :value="168">Hằng tuần (168 giờ)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Per-resource toggles -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Chọn
+                                loại tài nguyên sẽ dọn dẹp</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <label
+                                    class="flex items-center space-x-2 bg-slate-950/50 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-colors">
+                                    <input type="checkbox" x-model="settings.prune.prune_containers"
+                                        class="h-3.5 w-3.5 bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500 rounded">
+                                    <span class="text-xs text-slate-300 font-medium">📦 Containers</span>
+                                </label>
+                                <label
+                                    class="flex items-center space-x-2 bg-slate-950/50 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-colors">
+                                    <input type="checkbox" x-model="settings.prune.prune_images"
+                                        class="h-3.5 w-3.5 bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500 rounded">
+                                    <span class="text-xs text-slate-300 font-medium">🖼️ Images</span>
+                                </label>
+                                <label
+                                    class="flex items-center space-x-2 bg-slate-950/50 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-colors">
+                                    <input type="checkbox" x-model="settings.prune.prune_networks"
+                                        class="h-3.5 w-3.5 bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500 rounded">
+                                    <span class="text-xs text-slate-300 font-medium">🌐 Networks</span>
+                                </label>
+                                <label
+                                    class="flex items-center space-x-2 border rounded-xl p-3 cursor-pointer transition-colors"
+                                    :class="settings.prune.prune_volumes ? 'bg-rose-950/30 border-rose-500/30 hover:border-rose-500/50' : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'">
+                                    <input type="checkbox" x-model="settings.prune.prune_volumes"
+                                        class="h-3.5 w-3.5 bg-slate-950 border-slate-700 text-rose-600 focus:ring-rose-500 rounded">
+                                    <span class="text-xs font-medium"
+                                        :class="settings.prune.prune_volumes ? 'text-rose-300' : 'text-slate-300'">💿
+                                        Volumes</span>
+                                </label>
+                            </div>
+                            <!-- Volume Warning -->
+                            <div x-show="settings.prune.prune_volumes" x-transition
+                                class="mt-2 text-[11px] text-rose-400 bg-rose-500/5 border border-rose-500/10 rounded-lg p-2.5 flex items-start space-x-2">
+                                <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <span><strong>CẢNH BÁO:</strong> Bật xóa Volumes có thể gây <strong>MẤT DỮ LIỆU</strong>
+                                    nếu container tạm dừng mà volume chưa được backup. Chỉ bật nếu bạn chắc chắn!</span>
+                            </div>
+                        </div>
+
+                        <!-- Advanced options -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Images
+                                    Mode</label>
+                                <label
+                                    class="flex items-center space-x-2 bg-slate-950/50 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700 transition-colors">
+                                    <input type="checkbox" x-model="settings.prune.dangling_only"
+                                        class="h-3.5 w-3.5 bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500 rounded">
+                                    <span class="text-xs text-slate-300 font-medium">Chỉ xóa dangling images (an
+                                        toàn)</span>
+                                </label>
+                                <p class="text-[10px] text-slate-600 mt-1 px-1">Tắt = xóa tất cả images không dùng (bao
+                                    gồm base images)</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Giữ
+                                    lại items mới hơn</label>
+                                <select x-model.number="settings.prune.keep_recent_hours"
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                                    <option :value="1">1 giờ</option>
+                                    <option :value="6">6 giờ</option>
+                                    <option :value="12">12 giờ</option>
+                                    <option :value="24">24 giờ (khuyến nghị)</option>
+                                    <option :value="48">48 giờ</option>
+                                    <option :value="168">1 tuần</option>
+                                    <option :value="0">Không giữ (xóa tất cả)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Last Prune Time Status -->
+                        <div
+                            class="text-[11px] text-slate-400 font-medium bg-slate-950/50 p-3 rounded-xl border border-slate-900/60 flex justify-between items-center">
+                            <span>Lần dọn dẹp gần nhất:</span>
+                            <span class="font-mono font-bold text-indigo-400"
+                                x-text="formatPruneTime(settings.prune.last_prune_time)">Chưa từng thực hiện</span>
+                        </div>
+
+                        <!-- Preview Panel -->
+                        <div x-show="prunePreview" x-transition
+                            class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Xem trước sẽ dọn
+                                    dẹp</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full"
+                                    :class="prunePreview && prunePreview.totalItems > 0 ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-800 text-slate-500'"
+                                    x-text="prunePreview ? prunePreview.totalItems + ' items | ~' + formatBytesJS(prunePreview.estimatedSpace) : '0 items'"></span>
+                            </div>
+                            <template
+                                x-if="prunePreview && prunePreview.containers && prunePreview.containers.length > 0">
+                                <div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-1">📦 Containers
+                                        (<span x-text="prunePreview.containers.length"></span>)</div>
+                                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                                        <template x-for="item in prunePreview.containers" :key="item.id">
+                                            <div
+                                                class="flex justify-between text-[10px] text-slate-400 bg-slate-900/50 rounded-lg px-2.5 py-1.5">
+                                                <span class="font-medium text-slate-300" x-text="item.name"></span>
+                                                <span class="text-slate-500"
+                                                    x-text="item.age + ' trước — ' + item.extra"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="prunePreview && prunePreview.images && prunePreview.images.length > 0">
+                                <div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-1">🖼️ Images (<span
+                                            x-text="prunePreview.images.length"></span>)</div>
+                                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                                        <template x-for="item in prunePreview.images" :key="item.id">
+                                            <div
+                                                class="flex justify-between text-[10px] text-slate-400 bg-slate-900/50 rounded-lg px-2.5 py-1.5">
+                                                <span class="font-medium text-slate-300" x-text="item.name"></span>
+                                                <span class="text-slate-500" x-text="item.extra"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="prunePreview && prunePreview.networks && prunePreview.networks.length > 0">
+                                <div>
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-1">🌐 Networks (<span
+                                            x-text="prunePreview.networks.length"></span>)</div>
+                                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                                        <template x-for="item in prunePreview.networks" :key="item.id">
+                                            <div
+                                                class="flex justify-between text-[10px] text-slate-400 bg-slate-900/50 rounded-lg px-2.5 py-1.5">
+                                                <span class="font-medium text-slate-300" x-text="item.name"></span>
+                                                <span class="text-slate-500" x-text="item.extra"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="prunePreview && prunePreview.volumes && prunePreview.volumes.length > 0">
+                                <div>
+                                    <div class="text-[10px] font-bold text-rose-500 uppercase mb-1">💿 Volumes (<span
+                                            x-text="prunePreview.volumes.length"></span>)</div>
+                                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                                        <template x-for="item in prunePreview.volumes" :key="item.name">
+                                            <div
+                                                class="flex justify-between text-[10px] text-rose-400/70 bg-rose-950/20 rounded-lg px-2.5 py-1.5 border border-rose-500/10">
+                                                <span class="font-medium text-rose-300" x-text="item.name"></span>
+                                                <span class="text-rose-500" x-text="item.extra"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="prunePreview && prunePreview.totalItems === 0">
+                                <div class="text-center text-xs text-slate-500 py-4">
+                                    <span>✨ Hệ thống sạch sẽ! Không có gì cần dọn dẹp.</span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Prune Result Panel -->
+                        <div x-show="pruneResult" x-transition class="rounded-xl border overflow-hidden"
+                            :class="pruneSuccess ? 'border-emerald-500/20' : 'border-rose-500/20'">
+                            <div class="px-4 py-3" :class="pruneSuccess ? 'bg-emerald-500/5' : 'bg-rose-500/5'">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold"
+                                        :class="pruneSuccess ? 'text-emerald-400' : 'text-rose-400'"
+                                        x-text="pruneSuccess ? '✅ DỌN RÁC HOÀN TẤT' : '❌ DỌN RÁC THẤT BẠI'"></span>
+                                    <template x-if="pruneResult && pruneResult.spaceReclaimed">
+                                        <span
+                                            class="text-[11px] font-bold bg-emerald-500/15 text-emerald-400 px-2.5 py-0.5 rounded-full"
+                                            x-text="'💾 ' + formatBytesJS(pruneResult.spaceReclaimed) + ' đã giải phóng'"></span>
+                                    </template>
+                                </div>
+                                <div x-show="pruneResult" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    <div class="text-center bg-slate-950/40 rounded-lg p-2">
+                                        <div class="text-lg font-extrabold text-slate-200"
+                                            x-text="pruneResult ? (pruneResult.containersDeleted || []).length : 0">
+                                        </div>
+                                        <div class="text-[9px] text-slate-500 uppercase font-bold">Containers</div>
+                                    </div>
+                                    <div class="text-center bg-slate-950/40 rounded-lg p-2">
+                                        <div class="text-lg font-extrabold text-slate-200"
+                                            x-text="pruneResult ? (pruneResult.imagesDeleted || []).length : 0"></div>
+                                        <div class="text-[9px] text-slate-500 uppercase font-bold">Images</div>
+                                    </div>
+                                    <div class="text-center bg-slate-950/40 rounded-lg p-2">
+                                        <div class="text-lg font-extrabold text-slate-200"
+                                            x-text="pruneResult ? (pruneResult.networksDeleted || []).length : 0"></div>
+                                        <div class="text-[9px] text-slate-500 uppercase font-bold">Networks</div>
+                                    </div>
+                                    <div class="text-center bg-slate-950/40 rounded-lg p-2">
+                                        <div class="text-lg font-extrabold"
+                                            :class="pruneResult && (pruneResult.volumesDeleted || []).length > 0 ? 'text-rose-400' : 'text-slate-200'"
+                                            x-text="pruneResult ? (pruneResult.volumesDeleted || []).length : 0"></div>
+                                        <div class="text-[9px] text-slate-500 uppercase font-bold">Volumes</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error feedback (non-structured) -->
+                        <div x-show="pruneFeedback && !pruneResult"
+                            class="text-xs p-3.5 rounded-xl border transition-all bg-rose-500/5 border-rose-500/10 text-rose-400">
+                            <pre class="font-mono text-[10px] overflow-x-auto whitespace-pre-wrap max-h-40"
+                                x-text="pruneFeedback"></pre>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center space-x-3 pt-2">
+                            <!-- Save Button for Prune config -->
+                            <button type="submit"
+                                class="bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold py-3 px-6 rounded-xl transition-all text-sm flex items-center justify-center space-x-2">
+                                <span>Lưu cấu hình</span>
+                            </button>
+
+                            <!-- Preview Button -->
+                            <button type="button" @click="loadPrunePreview()" :disabled="previewLoading"
+                                class="bg-slate-900 border border-indigo-500/30 hover:border-indigo-500/50 text-indigo-300 font-bold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center space-x-2">
+                                <svg x-show="!previewLoading" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg x-show="previewLoading" class="animate-spin h-4 w-4" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Xem trước</span>
+                            </button>
+
+                            <!-- Prune Now Button -->
+                            <button type="button" @click="showPruneConfirm = true" :disabled="pruneLoading"
+                                class="flex-grow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transition-all text-sm tracking-wide flex items-center justify-center space-x-2">
+                                <svg x-show="!pruneLoading" class="w-4 h-4 text-emerald-100" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <svg x-show="pruneLoading" class="animate-spin h-4 w-4 text-white" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Dọn rác Docker ngay</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Prune Confirmation Modal -->
+                <div x-show="showPruneConfirm" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+                    @click.self="showPruneConfirm = false">
+                    <div class="bg-[#0a0f1c] border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4"
+                        @click.stop>
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 bg-amber-500/10 rounded-xl text-amber-400">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-extrabold text-slate-200">Xác nhận dọn rác Docker</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Hành động này không thể hoàn tác!</p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="text-xs text-slate-400 bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                            <div class="flex items-center space-x-2">
+                                <span :class="settings.prune.prune_containers ? 'text-emerald-400' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_containers ? '✅' : '⬜'"></span>
+                                <span
+                                    :class="settings.prune.prune_containers ? 'text-slate-300' : 'text-slate-600'">Containers
+                                    đã dừng</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span :class="settings.prune.prune_images ? 'text-emerald-400' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_images ? '✅' : '⬜'"></span>
+                                <span :class="settings.prune.prune_images ? 'text-slate-300' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_images ? (settings.prune.dangling_only ? 'Dangling images' : 'TẤT CẢ images không dùng') : 'Images'"></span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span :class="settings.prune.prune_networks ? 'text-emerald-400' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_networks ? '✅' : '⬜'"></span>
+                                <span
+                                    :class="settings.prune.prune_networks ? 'text-slate-300' : 'text-slate-600'">Networks
+                                    không dùng</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span :class="settings.prune.prune_volumes ? 'text-rose-400' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_volumes ? '⚠️' : '⬜'"></span>
+                                <span
+                                    :class="settings.prune.prune_volumes ? 'text-rose-400 font-bold' : 'text-slate-600'"
+                                    x-text="settings.prune.prune_volumes ? 'VOLUMES (CÓ THỂ MẤT DỮ LIỆU!)' : 'Volumes (đã tắt)'"></span>
+                            </div>
+                            <div class="text-[10px] text-slate-500 pt-1 border-t border-slate-800 mt-1"
+                                x-show="settings.prune.keep_recent_hours > 0">
+                                Giữ lại items mới hơn <strong class="text-slate-400"
+                                    x-text="settings.prune.keep_recent_hours + ' giờ'"></strong>
+                            </div>
+                        </div>
+
+                        <label x-show="settings.prune.prune_volumes" class="flex items-start space-x-2 cursor-pointer">
+                            <input type="checkbox" x-model="pruneConfirmChecked"
+                                class="h-3.5 w-3.5 mt-0.5 bg-slate-950 border-rose-500/50 text-rose-600 focus:ring-rose-500 rounded">
+                            <span class="text-[11px] text-rose-400 leading-tight">Tôi hiểu rằng xóa Volumes có thể gây
+                                mất dữ liệu và đã backup đầy đủ.</span>
+                        </label>
+
+                        <div class="flex space-x-3 pt-2">
+                            <button @click="showPruneConfirm = false"
+                                class="flex-1 bg-slate-900 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs hover:border-slate-600 transition-colors">Hủy</button>
+                            <button @click="executePrune()"
+                                :disabled="settings.prune.prune_volumes && !pruneConfirmChecked"
+                                class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                🧹 Xác nhận dọn rác
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Password Change Card -->
+                <div
+                    class="glass-card rounded-3xl p-8 border border-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.02)]">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="p-2.5 bg-rose-500/10 rounded-xl text-rose-400">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-200">Thay Đổi Mật Khẩu Admin</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Thay đổi mật khẩu đăng nhập của bảng điều khiển
+                                DockerWhiz.</p>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="changePassword()" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật khẩu
+                                hiện tại</label>
+                            <input type="password" x-model="password.old" required
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                placeholder="••••••••">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mật
+                                    khẩu mới</label>
+                                <input type="password" x-model="password.new" required
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                    placeholder="••••••••">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Xác
+                                    nhận mật khẩu mới</label>
+                                <input type="password" x-model="password.confirm" required
+                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-rose-500 transition-colors"
+                                    placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <!-- Password Feedback Message -->
+                        <div x-show="passFeedback" class="text-xs p-3.5 rounded-xl border transition-all" :class="{
+                                 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400': passSuccess,
+                                 'bg-rose-500/5 border-rose-500/10 text-rose-400': !passSuccess
+                             }" x-text="passFeedback"></div>
+
+                        <div class="pt-2">
+                            <button type="submit"
+                                class="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-rose-500/25 transition-all text-sm tracking-wide flex items-center justify-center space-x-2">
+                                <svg x-show="!passLoading" class="w-4 h-4 text-rose-100" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <svg x-show="passLoading" class="animate-spin h-4 w-4 text-white" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Đổi mật khẩu tài khoản</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-950 bg-[#04060c] py-4 text-center text-slate-600 text-xs mt-12">
+        <p>DockerWhiz v1.0.0 &copy; 2026. Thiết kế siêu nhẹ tối ưu bộ nhớ VPS.</p>
+    </footer>
+
+    <!-- Logs Modal -->
+    <div x-show="showLogsModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020408]/80 backdrop-blur-sm"
+        style="display: none;" @keydown.escape.window="showLogsModal = false">
+
+        <div class="glass-card rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-800 shadow-2xl overflow-hidden"
+            @click.away="showLogsModal = false">
+
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-900 bg-[#090e1a]/95 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-200 tracking-wide uppercase">Nhật Ký Container Logs</h3>
+                        <p class="text-[10px] text-indigo-400 font-mono mt-0.5" x-text="selectedContainerName"></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="refreshLogs()"
+                        class="text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition-colors font-medium flex items-center space-x-1">
+                        <svg :class="modalLoading ? 'animate-spin' : ''" class="w-3.5 h-3.5 text-slate-400" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H18v3z" />
+                        </svg>
+                        <span>Làm mới</span>
+                    </button>
+                    <button @click="showLogsModal = false"
+                        class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content (Logs body) -->
+            <div class="flex-grow p-6 bg-[#040711] overflow-y-auto flex flex-col min-h-[300px] max-h-[60vh]">
+                <div x-show="modalLoading" class="flex-grow flex flex-col items-center justify-center py-12">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                    <p class="mt-3 text-[11px] font-medium text-slate-500 uppercase tracking-widest">Đang tải nhật ký...
+                    </p>
+                </div>
+
+                <div x-show="!modalLoading" class="flex-grow flex flex-col">
+                    <template x-if="!selectedContainerLogs">
+                        <div class="flex-grow flex flex-col items-center justify-center text-slate-600 py-12">
+                            <svg class="w-10 h-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                            <span class="text-xs">Không có log nào được ghi nhận.</span>
+                        </div>
+                    </template>
+                    <template x-if="selectedContainerLogs">
+                        <pre class="bg-slate-950/75 border border-slate-900 rounded-xl p-4 font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre-wrap flex-grow max-h-full select-text"
+                            x-text="selectedContainerLogs"></pre>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-3 border-t border-slate-900 bg-[#090e1a]/95 flex justify-end">
+                <button @click="showLogsModal = false"
+                    class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl shadow-md transition-colors font-semibold">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alpine.js App Logic -->
+    <script>
+        function app() {
+            return {
+                page: 'loading', // loading, setup, login, dashboard
+                activeTab: 'dashboard', // dashboard, settings
+                setupTokenInput: '',
+                setupPass: '',
+                setupConfirm: '',
+                loginPass: '',
+                errorMessage: '',
+
+                stats: {
+                    totalContainers: 0,
+                    runningCount: 0,
+                    stoppedCount: 0,
+                    containers: []
+                },
+                logs: [],
+                connected: false,
+                prevContainers: {},
+                actionLoading: {},
+                showLogsModal: false,
+                selectedContainerId: '',
+                selectedContainerName: '',
+                selectedContainerLogs: '',
+                modalLoading: false,
+
+                settings: {
+                    telegramBotToken: '',
+                    telegramChatID: '',
+                    telegramDisabled: false,
+                    telegramAdminID: '',
+                    prune: {
+                        enabled: false,
+                        interval_hours: 24,
+                        last_prune_time: 0,
+                        prune_containers: true,
+                        prune_images: true,
+                        prune_networks: true,
+                        prune_volumes: false,
+                        dangling_only: true,
+                        keep_recent_hours: 24
+                    }
+                },
+                settingsLoading: false,
+                saveLoading: false,
+                testLoading: false,
+                testFeedback: '',
+                testSuccess: false,
+
+                password: {
+                    old: '',
+                    new: '',
+                    confirm: ''
+                },
+                passLoading: false,
+                passFeedback: '',
+                passSuccess: false,
+
+                pruneLoading: false,
+                pruneFeedback: '',
+                pruneSuccess: false,
+                pruneResult: null,
+                prunePreview: null,
+                previewLoading: false,
+                showPruneConfirm: false,
+                pruneConfirmChecked: false,
+
+                init() {
+                    this.checkAuthStatus();
+                    const cachedLogs = localStorage.getItem('DockerWhiz_logs');
+                    if (cachedLogs) {
+                        try {
+                            this.logs = JSON.parse(cachedLogs);
+                        } catch (e) {
+                            localStorage.removeItem('DockerWhiz_logs');
+                        }
+                    }
+                },
+
+                async checkAuthStatus() {
+                    try {
+                        const res = await fetch('/api/auth/status');
+                        const data = await res.json();
+
+                        if (data.setupRequired) {
+                            this.page = 'setup';
+                        } else if (!data.authenticated) {
+                            this.page = 'login';
+                        } else {
+                            this.page = 'dashboard';
+                            this.loadSettings();
+                            this.connectSSE();
+                        }
+                    } catch (err) {
+                        console.error("Auth status error:", err);
+                        this.page = 'login'; // Fallback
+                    }
+                },
+
+                async setupPassword() {
+                    this.errorMessage = '';
+                    if (!this.setupTokenInput) {
+                        this.errorMessage = 'Setup Token không được để trống!';
+                        return;
+                    }
+                    if (this.setupPass !== this.setupConfirm) {
+                        this.errorMessage = 'Mật khẩu nhập lại không khớp!';
+                        return;
+                    }
+                    if (this.setupPass.length < 6) {
+                        this.errorMessage = 'Mật khẩu phải dài tối thiểu 6 ký tự!';
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch('/api/auth/setup', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify({
+                                password: this.setupPass,
+                                token: this.setupTokenInput.trim()
+                            })
+                        });
+
+                        if (res.ok) {
+                            this.page = 'dashboard';
+                            this.loadSettings();
+                            this.connectSSE();
+                        } else {
+                            const errText = await res.text();
+                            this.errorMessage = errText || 'Thiết lập mật khẩu thất bại.';
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Lỗi kết nối máy chủ.';
+                    }
+                },
+
+                async login() {
+                    this.errorMessage = '';
+                    try {
+                        const res = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify({ password: this.loginPass })
+                        });
+
+                        if (res.ok) {
+                            this.page = 'dashboard';
+                            this.loadSettings();
+                            this.connectSSE();
+                        } else {
+                            this.errorMessage = 'Mật khẩu không chính xác!';
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Lỗi kết nối máy chủ.';
+                    }
+                },
+
+                async logout() {
+                    try {
+                        await fetch('/api/auth/logout', {
+                            method: 'POST',
+                            headers: { 'X-DockerWhiz-Request': 'true' }
+                        });
+                        this.page = 'login';
+                        this.loginPass = '';
+                        this.connected = false;
+                        this.stats = { totalContainers: 0, runningCount: 0, stoppedCount: 0, containers: [] };
+                        this.logs = [];
+                        localStorage.removeItem('DockerWhiz_logs');
+                    } catch (err) {
+                        console.error("Logout failed:", err);
+                    }
+                },
+
+                async toggleTelegram() {
+                    const targetState = !this.settings.telegramDisabled;
+                    try {
+                        const res = await fetch('/api/settings/telegram/toggle', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify({ disabled: targetState })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.settings.telegramDisabled = data.telegramDisabled;
+                            this.addLog(
+                                this.settings.telegramDisabled
+                                    ? 'Đã <span class="text-rose-400 font-bold">TẮT</span> thông báo Telegram'
+                                    : 'Đã <span class="text-emerald-400 font-bold">BẬT</span> thông báo Telegram',
+                                this.settings.telegramDisabled ? 'error' : 'success'
+                            );
+                        } else {
+                            this.addLog('Lỗi khi thay đổi trạng thái Telegram: ' + (data.error || ''), 'error');
+                        }
+                    } catch (err) {
+                        console.error("Failed to toggle telegram:", err);
+                        this.addLog('Lỗi kết nối khi thay đổi trạng thái Telegram', 'error');
+                    }
+                },
+
+                connectSSE() {
+                    // Check if already connected to prevent duplicated sockets
+                    if (this.connected) return;
+
+                    const eventSource = new EventSource('/api/stream');
+
+                    eventSource.onopen = () => {
+                        this.connected = true;
+                        this.addLog('Kết nối thành công với máy chủ DockerWhiz', 'info');
+                    };
+
+                    eventSource.onerror = () => {
+                        this.connected = false;
+                        this.addLog('Mất kết nối tới máy chủ, đang thử lại...', 'error');
+                    };
+
+                    eventSource.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+
+                            // Detect container state changes for incident logs
+                            if (this.stats.containers && this.stats.containers.length > 0) {
+                                this.detectStateChanges(data.containers);
+                            } else {
+                                // First load populate
+                                data.containers.forEach(c => {
+                                    this.prevContainers[c.id] = c.state;
+                                });
+                            }
+
+                            this.stats = data;
+                        } catch (e) {
+                            console.error("Error parsing SSE data:", e);
+                        }
+                    };
+                },
+
+                detectStateChanges(newContainers) {
+                    newContainers.forEach(c => {
+                        const oldState = this.prevContainers[c.id];
+                        if (oldState !== undefined && oldState !== c.state) {
+                            let msg = `Container <strong class="text-slate-200">${c.name}</strong> `;
+                            if (c.state === 'running') {
+                                msg += `đã <span class="text-emerald-400 font-bold">BẮT ĐẦU</span> hoạt động (Status: ${c.status})`;
+                                this.addLog(msg, 'success', c.id, c.name);
+                            } else {
+                                msg += `đã <span class="text-rose-400 font-bold">DỪNG / SẬP</span> (Status: ${c.status})`;
+                                this.addLog(msg, 'error', c.id, c.name);
+                            }
+                        }
+                        this.prevContainers[c.id] = c.state;
+                    });
+                },
+
+                addLog(message, type = 'info', containerId = '', containerName = '') {
+                    this.logs.unshift({
+                        id: Date.now() + Math.random().toString(36).substr(2, 5),
+                        time: new Date().toLocaleTimeString(),
+                        message: message,
+                        type: type,
+                        containerId: containerId,
+                        containerName: containerName
+                    });
+
+                    if (this.logs.length > 50) {
+                        this.logs.pop();
+                    }
+                    localStorage.setItem('DockerWhiz_logs', JSON.stringify(this.logs));
+                },
+
+                formatBytes(mb) {
+                    if (!mb || mb === 0) return '0 MB';
+                    if (mb < 1024) return mb.toFixed(1) + ' MB';
+                    return (mb / 1024).toFixed(2) + ' GB';
+                },
+
+                async performAction(id, name, action) {
+                    console.log("performAction clicked:", id, name, action);
+                    if (this.actionLoading[id]) {
+                        console.log("Action already loading for:", id);
+                        return;
+                    }
+                    this.actionLoading = { ...this.actionLoading, [id]: action };
+
+                    let actionText = '';
+                    if (action === 'start') actionText = 'khởi động';
+                    else if (action === 'stop') actionText = 'dừng';
+                    else if (action === 'restart') actionText = 'khởi động lại';
+
+                    this.addLog(`Đang gửi yêu cầu ${actionText} container <strong class="text-slate-200">${name}</strong>...`, 'info', id, name);
+
+                    try {
+                        const res = await fetch(`/api/containers/${id}/${action}`, {
+                            method: 'POST',
+                            headers: { 'X-DockerWhiz-Request': 'true' }
+                        });
+                        console.log("Response status:", res.status);
+                        const data = await res.json();
+                        console.log("Response data:", data);
+
+                        if (res.ok && data.success) {
+                            this.addLog(`Yêu cầu ${actionText} container <strong class="text-slate-200">${name}</strong> đã được thực hiện thành công.`, 'success', id, name);
+                        } else {
+                            const errMsg = data.error || 'Lỗi không xác định từ Docker.';
+                            this.addLog(`Yêu cầu ${actionText} container <strong class="text-slate-200">${name}</strong> THẤT BẠI: <span class="text-rose-400">${errMsg}</span>`, 'error', id, name);
+                        }
+                    } catch (err) {
+                        console.error("performAction error:", err);
+                        this.addLog(`Không thể kết nối đến API để ${actionText} container <strong class="text-slate-200">${name}</strong>.`, 'error', id, name);
+                    } finally {
+                        const updated = { ...this.actionLoading };
+                        delete updated[id];
+                        this.actionLoading = updated;
+                    }
+                },
+
+                async viewLogs(id, name) {
+                    console.log("viewLogs clicked:", id, name);
+                    this.selectedContainerId = id;
+                    this.selectedContainerName = name;
+                    this.selectedContainerLogs = '';
+                    this.showLogsModal = true;
+                    await this.refreshLogs();
+                },
+
+                async refreshLogs() {
+                    console.log("refreshLogs started for:", this.selectedContainerId);
+                    if (!this.selectedContainerId) return;
+                    this.modalLoading = true;
+                    try {
+                        const res = await fetch(`/api/containers/${this.selectedContainerId}/logs`);
+                        console.log("Logs Response status:", res.status);
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.selectedContainerLogs = data.logs || '';
+                        } else {
+                            this.selectedContainerLogs = `Lỗi khi tải log: ${data.error || 'Lỗi không xác định.'}`;
+                        }
+                    } catch (err) {
+                        console.error("refreshLogs error:", err);
+                        this.selectedContainerLogs = 'Không thể kết nối tới API để tải logs.';
+                    } finally {
+                        this.modalLoading = false;
+                    }
+                },
+
+                async loadSettings() {
+                    this.settingsLoading = true;
+                    this.testFeedback = '';
+                    this.pruneFeedback = '';
+                    this.passFeedback = '';
+                    this.pruneResult = null;
+                    this.prunePreview = null;
+                    try {
+                        const res = await fetch('/api/settings/get');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.settings.telegramBotToken = data.telegramBotToken || '';
+                            this.settings.telegramChatID = data.telegramChatID || '';
+                            this.settings.telegramDisabled = data.telegramDisabled || false;
+                            this.settings.telegramAdminID = data.telegramAdminID || '';
+                            if (data.prune) {
+                                this.settings.prune = {
+                                    enabled: data.prune.enabled || false,
+                                    interval_hours: data.prune.interval_hours || 24,
+                                    last_prune_time: data.prune.last_prune_time || 0,
+                                    prune_containers: data.prune.prune_containers !== undefined ? data.prune.prune_containers : true,
+                                    prune_images: data.prune.prune_images !== undefined ? data.prune.prune_images : true,
+                                    prune_networks: data.prune.prune_networks !== undefined ? data.prune.prune_networks : true,
+                                    prune_volumes: data.prune.prune_volumes || false,
+                                    dangling_only: data.prune.dangling_only !== undefined ? data.prune.dangling_only : true,
+                                    keep_recent_hours: data.prune.keep_recent_hours || 24
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Failed to load settings:", err);
+                    } finally {
+                        this.settingsLoading = false;
+                    }
+                },
+
+                async saveSettings() {
+                    this.saveLoading = true;
+                    this.testFeedback = '';
+                    try {
+                        const res = await fetch('/api/settings', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify(this.settings)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.testSuccess = true;
+                            this.testFeedback = 'Cấu hình Telegram đã được lưu thành công!';
+                        } else {
+                            this.testSuccess = false;
+                            this.testFeedback = data.error || 'Lưu cấu hình thất bại.';
+                        }
+                    } catch (err) {
+                        console.error("Failed to save settings:", err);
+                        this.testSuccess = false;
+                        this.testFeedback = 'Lỗi kết nối API lưu cấu hình.';
+                    } finally {
+                        this.saveLoading = false;
+                    }
+                },
+
+                async savePruneSettings() {
+                    this.pruneFeedback = '';
+                    this.pruneResult = null;
+                    try {
+                        const res = await fetch('/api/settings', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify(this.settings)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.pruneSuccess = true;
+                            this.pruneFeedback = 'Cấu hình Smart Prune đã được lưu thành công!';
+                        } else {
+                            this.pruneSuccess = false;
+                            this.pruneFeedback = data.error || 'Lưu cấu hình thất bại.';
+                        }
+                    } catch (err) {
+                        console.error("Failed to save settings:", err);
+                        this.pruneSuccess = false;
+                        this.pruneFeedback = 'Lỗi kết nối API lưu cấu hình.';
+                    }
+                },
+
+                async testTelegram() {
+                    this.testLoading = true;
+                    this.testFeedback = '';
+                    try {
+                        const res = await fetch('/api/settings/test', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify(this.settings)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.testSuccess = true;
+                            this.testFeedback = 'Gửi tin nhắn thử nghiệm thành công! Hãy kiểm tra ứng dụng Telegram.';
+                        } else {
+                            this.testSuccess = false;
+                            this.testFeedback = 'Thử kết nối thất bại: ' + (data.error || 'Lỗi không xác định.');
+                        }
+                    } catch (err) {
+                        console.error("Failed to test Telegram:", err);
+                        this.testSuccess = false;
+                        this.testFeedback = 'Lỗi kết nối khi gửi thử nghiệm Telegram.';
+                    } finally {
+                        this.testLoading = false;
+                    }
+                },
+
+                formatPruneTime(ts) {
+                    if (!ts) return 'Chưa từng thực hiện';
+                    return new Date(ts * 1000).toLocaleString();
+                },
+
+                formatBytesJS(bytes) {
+                    if (!bytes || bytes <= 0) return '0 B';
+                    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    let i = 0;
+                    let b = bytes;
+                    while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
+                    return b.toFixed(1) + ' ' + units[i];
+                },
+
+                async loadPrunePreview() {
+                    this.previewLoading = true;
+                    this.prunePreview = null;
+                    try {
+                        const res = await fetch('/api/settings/prune/preview');
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.prunePreview = data.preview;
+                        } else {
+                            this.pruneFeedback = 'Không thể tải preview: ' + (data.error || 'Lỗi không xác định.');
+                        }
+                    } catch (err) {
+                        console.error("Preview error:", err);
+                        this.pruneFeedback = 'Lỗi kết nối API preview.';
+                    } finally {
+                        this.previewLoading = false;
+                    }
+                },
+
+                async executePrune() {
+                    this.showPruneConfirm = false;
+                    this.pruneConfirmChecked = false;
+                    this.pruneLoading = true;
+                    this.pruneFeedback = '';
+                    this.pruneResult = null;
+                    this.prunePreview = null;
+                    try {
+                        const res = await fetch('/api/settings/prune', {
+                            method: 'POST',
+                            headers: { 'X-DockerWhiz-Request': 'true' }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.pruneSuccess = true;
+                            this.pruneResult = data.result;
+                            this.settings.prune.last_prune_time = Math.floor(Date.now() / 1000);
+                        } else {
+                            this.pruneSuccess = false;
+                            this.pruneFeedback = 'Dọn rác thất bại: ' + (data.error || 'Lỗi không xác định.');
+                        }
+                    } catch (err) {
+                        console.error("Manual prune error:", err);
+                        this.pruneSuccess = false;
+                        this.pruneFeedback = 'Lỗi kết nối API dọn rác.';
+                    } finally {
+                        this.pruneLoading = false;
+                    }
+                },
+
+                async changePassword() {
+                    if (this.password.new !== this.password.confirm) {
+                        this.passSuccess = false;
+                        this.passFeedback = 'Mật khẩu mới và mật khẩu xác nhận không khớp!';
+                        return;
+                    }
+                    this.passLoading = true;
+                    this.passFeedback = '';
+                    try {
+                        const res = await fetch('/api/settings/password', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-DockerWhiz-Request': 'true'
+                            },
+                            body: JSON.stringify({
+                                oldPassword: this.password.old,
+                                newPassword: this.password.new
+                            })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.passSuccess = true;
+                            this.passFeedback = 'Đổi mật khẩu thành công!';
+                            this.password.old = '';
+                            this.password.new = '';
+                            this.password.confirm = '';
+                        } else {
+                            this.passSuccess = false;
+                            this.passFeedback = data.error || 'Đổi mật khẩu thất bại.';
+                        }
+                    } catch (err) {
+                        console.error("Change password error:", err);
+                        this.passSuccess = false;
+                        this.passFeedback = 'Lỗi kết nối API đổi mật khẩu.';
+                    } finally {
+                        this.passLoading = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

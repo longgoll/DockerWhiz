@@ -1,0 +1,8 @@
+# Binaries
+nanodock.exe
+nanodock
+
+# Go build files
+*.out
+*.test
+*.prof
