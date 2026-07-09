@@ -198,6 +198,18 @@ var (
 	cpuOverLimitCount int
 )
 
+// Flap tracking to prevent Telegram spam
+type FlapTracker struct {
+	timestamps []time.Time
+	mutedUntil time.Time
+}
+
+var (
+	flapTrackers   = make(map[string]*FlapTracker)
+	flapTrackersMu sync.Mutex
+)
+
+
 // Docker API Structures
 type Container struct {
 	ID      string   `json:"Id"`
@@ -720,12 +732,80 @@ func getTelegramCredentials() (string, string) {
 	return token, chatID
 }
 
+func shouldThrottleContainer(container, token, chatID string) bool {
+	if container == "" || token == "" || chatID == "" {
+		return false
+	}
+
+	flapTrackersMu.Lock()
+	defer flapTrackersMu.Unlock()
+
+	tracker, exists := flapTrackers[container]
+	if !exists {
+		tracker = &FlapTracker{}
+		flapTrackers[container] = tracker
+	}
+
+	now := time.Now()
+
+	// Nếu đang bị mute, gia hạn thêm 5 phút tắt tiếng và bỏ qua thông báo
+	if now.Before(tracker.mutedUntil) {
+		tracker.mutedUntil = now.Add(5 * time.Minute)
+		log.Printf("[THROTTLE] Container %s đang bị mute. Gia hạn thêm 5 phút (đến %v). Bỏ qua thông báo.", container, tracker.mutedUntil.Format("15:04:05"))
+		return true
+	}
+
+	// Dọn dẹp các sự kiện cũ hơn 60 giây
+	validTimestamps := []time.Time{}
+	for _, t := range tracker.timestamps {
+		if now.Sub(t) <= 60*time.Second {
+			validTimestamps = append(validTimestamps, t)
+		}
+	}
+	tracker.timestamps = append(validTimestamps, now)
+
+	// Nếu tần suất vượt ngưỡng (>= 4 sự kiện trong 60 giây)
+	if len(tracker.timestamps) >= 4 {
+		// Mute container này trong 5 phút
+		tracker.mutedUntil = now.Add(5 * time.Minute)
+		tracker.timestamps = nil // Reset bộ đếm
+
+		log.Printf("[THROTTLE] Phát hiện container %s bị crash loop / spam (>= 4 sự kiện/60s). Mute trong 5 phút.", container)
+
+		// Gửi 1 thông báo cảnh báo duy nhất về Telegram
+		go func() {
+			message := fmt.Sprintf(
+				"⚠️ *[DockerWhiz] CẢNH BÁO CRASH LOOP / SPAM*\n"+
+					"------------------------------------\n"+
+					"📦 *Container:* %s\n"+
+					"🔄 *Hiện tượng:* Khởi động/dừng/sập liên tục (>= 4 lần trong 60 giây).\n"+
+					"🔇 *Trạng thái:* Tạm dừng gửi thông báo cho container này trong *5 phút* để tránh spam Telegram.\n"+
+					"ℹ️ *Ghi chú:* Mỗi khi phát sinh sự kiện mới trong lúc tắt tiếng, thời gian tắt tiếng sẽ tự động gia hạn thêm 5 phút để bảo vệ kênh Telegram.\n"+
+					"------------------------------------\n"+
+					"🛠️ *Đề xuất:* Hãy kiểm tra log của container bằng lệnh:\n`docker logs %s`",
+				escapeMarkdown(container),
+				escapeMarkdown(container),
+			)
+			sendTelegramRaw(message, token, chatID)
+		}()
+
+		return true
+	}
+
+	return false
+}
+
 func sendTelegramInfo(container, image, action string) {
 	token, chatID := getTelegramCredentials()
 	if token == "" || chatID == "" {
 		log.Printf("[INFO] Container: %s | Image: %s | Action: %s (Telegram alerts disabled)", container, image, action)
 		return
 	}
+
+	if shouldThrottleContainer(container, token, chatID) {
+		return
+	}
+
 
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
 	var actionText string
@@ -771,6 +851,11 @@ func sendTelegramAlert(container, image, reason string) {
 		log.Printf("[ALERT] Container: %s | Image: %s | Reason: %s (Telegram alerts disabled)", container, image, reason)
 		return
 	}
+
+	if shouldThrottleContainer(container, token, chatID) {
+		return
+	}
+
 
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
 	message := fmt.Sprintf(
